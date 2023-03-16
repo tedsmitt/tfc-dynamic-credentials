@@ -46,6 +46,16 @@ resource "aws_apprunner_service" "app" {
     auto_deployments_enabled = false
   }
 
+  network_configuration {
+    ingress_configuration {
+      is_publicly_accessible = true
+    }
+    egress_configuration {
+      egress_type      = "VPC"
+      vpc_connector_id = aws_apprunner_vpc_connector.connector.id
+    }
+  }
+
   tags = {
     Name = "app-${var.stage}"
   }
