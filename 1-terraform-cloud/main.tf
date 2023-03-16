@@ -84,10 +84,11 @@ resource "aws_iam_role_policy_attachment" "terraform_cloud" {
 
 # Workspaces
 resource "tfe_workspace" "main" {
-  name              = "test-workspace"
-  organization      = data.tfe_organization.main.name
-  tag_names         = ["test"]
-  working_directory = "2-test-resources"
+  name                          = "test-workspace"
+  organization                  = data.tfe_organization.main.name
+  tag_names                     = ["test"]
+  working_directory             = "2-test-resources"
+  structured_run_output_enabled = false
   vcs_repo {
     identifier     = "tedsmitt/tfc-dynamic-credentials"
     oauth_token_id = data.tfe_oauth_client.github.oauth_token_id

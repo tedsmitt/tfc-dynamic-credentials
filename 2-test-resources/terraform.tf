@@ -4,13 +4,10 @@ terraform {
     organization = "edintheclouds"
 
     workspaces {
-      name = "tfc-dynamic-credentials"
+      name = "test-workspace"
     }
   }
   required_providers {
-    tfe = {
-      version = "~> 0.42.0"
-    }
     aws = {
       version = "~> 4.0"
     }
