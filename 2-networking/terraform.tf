@@ -2,9 +2,8 @@ terraform {
   backend "remote" {
     hostname     = "app.terraform.io"
     organization = "edintheclouds"
-
     workspaces {
-      name = "test-workspace"
+      prefix = "networking-"
     }
   }
   required_providers {

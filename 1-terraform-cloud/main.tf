@@ -2,18 +2,9 @@ variable "github_oauth_app_id" {
   type = string
 }
 
-# variable "github_oauth_app_token" {
-#   type      = string
-#   sensitive = true
-# }
-
-# variable "github_ssh_key_file_path" {
-#   type = string
-# }
-
 locals {
+  stages         = ["dev", "prod"]
   tfc_thumbprint = "9e99a48a9960b14926bb7f3b02e22da2b0ab7280"
-
   tfe_variables = {
     "TFC_AWS_PROVIDER_AUTH" = "true"
     "TFC_AWS_RUN_ROLE_ARN"  = aws_iam_role.terraform_cloud.arn
@@ -21,6 +12,7 @@ locals {
   }
 }
 
+# Data sources
 data "tfe_organization" "main" {
   name = "edintheclouds"
 }
@@ -67,28 +59,30 @@ resource "aws_iam_role_policy_attachment" "terraform_cloud" {
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
 }
 
-# VCS Setup
-# resource "tfe_oauth_client" "github" {
-#   api_url          = "https://api.github.com"
-#   http_url         = "https://github.com"
-#   oauth_token      = var.github_oauth_app_token
-#   service_provider = "github"
-#   organization     = data.tfe_organization.main.name
-# }
+# TFC Variable Set
+resource "tfe_variable_set" "aws_credentials" {
+  name         = "AWS Credentials"
+  global       = false
+  organization = data.tfe_organization.main.name
+}
 
-# resource "tfe_ssh_key" "github" {
-#   name         = "github"
-#   key          = file(var.github_ssh_key_file_path)
-#   organization = data.tfe_organization.main.name
-# }
+resource "tfe_variable" "aws_credentials" {
+  for_each        = local.tfe_variables
+  key             = each.key
+  value           = each.value
+  category        = "env"
+  variable_set_id = tfe_variable_set.aws_credentials.id
+}
 
-# Workspaces
-resource "tfe_workspace" "main" {
-  name                          = "test-workspace"
+# TFC Workspaces
+resource "tfe_workspace" "networking" {
+  for_each                      = toset(local.stages)
+  name                          = "networking-${each.value}"
   organization                  = data.tfe_organization.main.name
-  tag_names                     = ["test"]
-  working_directory             = "2-test-resources"
+  tag_names                     = ["networking"]
+  working_directory             = "2-networking"
   structured_run_output_enabled = false
+
   vcs_repo {
     identifier     = "tedsmitt/tfc-dynamic-credentials"
     oauth_token_id = data.tfe_oauth_client.github.oauth_token_id
@@ -96,10 +90,8 @@ resource "tfe_workspace" "main" {
   }
 }
 
-resource "tfe_variable" "vars" {
-  for_each     = local.tfe_variables
-  key          = each.key
-  value        = each.value
-  category     = "env"
-  workspace_id = tfe_workspace.main.id
+resource "tfe_workspace_variable_set" "networking" {
+  for_each        = tfe_workspace.networking
+  workspace_id    = each.value.id
+  variable_set_id = tfe_variable_set.aws_credentials.id
 }
