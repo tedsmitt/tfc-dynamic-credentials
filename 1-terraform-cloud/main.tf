@@ -79,7 +79,7 @@ resource "tfe_workspace" "networking" {
   for_each                      = toset(local.stages)
   name                          = "networking-${each.value}"
   organization                  = data.tfe_organization.main.name
-  tag_names                     = ["networking"]
+  tag_names                     = ["networking", each.value]
   working_directory             = "2-networking"
   structured_run_output_enabled = false
 
@@ -94,4 +94,12 @@ resource "tfe_workspace_variable_set" "networking" {
   for_each        = tfe_workspace.networking
   workspace_id    = each.value.id
   variable_set_id = tfe_variable_set.aws_credentials.id
+}
+
+resource "tfe_workspace_variable" "env" {
+  for_each     = toset(local.stages)
+  key          = "stage"
+  value        = each.value
+  category     = "terraform"
+  workspace_id = tfe_workspace.networking[each.key].id
 }
