@@ -75,12 +75,44 @@ resource "tfe_variable" "aws_credentials" {
 }
 
 # TFC Workspaces
+# Networking
 resource "tfe_workspace" "networking" {
   for_each                      = toset(local.stages)
   name                          = "networking-${each.value}"
   organization                  = data.tfe_organization.main.name
   tag_names                     = ["networking", each.value]
-  working_directory             = "2-networking"
+  structured_run_output_enabled = false
+  global_remote_state           = true
+
+  vcs_repo {
+    identifier     = "tedsmitt/tfc-dynamic-credentials"
+    oauth_token_id = data.tfe_oauth_client.github.oauth_token_id
+    branch         = "main"
+  }
+  working_directory = "2-networking"
+}
+
+resource "tfe_workspace_variable_set" "networking" {
+  for_each        = tfe_workspace.networking
+  workspace_id    = each.value.id
+  variable_set_id = tfe_variable_set.aws_credentials.id
+}
+
+resource "tfe_variable" "networking_env" {
+  for_each     = toset(local.stages)
+  key          = "stage"
+  value        = each.value
+  category     = "terraform"
+  workspace_id = tfe_workspace.networking[each.key].id
+}
+
+# App
+resource "tfe_workspace" "app" {
+  for_each                      = toset(local.stages)
+  name                          = "app-${each.value}"
+  organization                  = data.tfe_organization.main.name
+  tag_names                     = ["app", each.value]
+  working_directory             = "3-app"
   structured_run_output_enabled = false
 
   vcs_repo {
@@ -90,16 +122,16 @@ resource "tfe_workspace" "networking" {
   }
 }
 
-resource "tfe_workspace_variable_set" "networking" {
-  for_each        = tfe_workspace.networking
+resource "tfe_workspace_variable_set" "app" {
+  for_each        = tfe_workspace.app
   workspace_id    = each.value.id
   variable_set_id = tfe_variable_set.aws_credentials.id
 }
 
-resource "tfe_workspace_variable" "env" {
+resource "tfe_variable" "app_env" {
   for_each     = toset(local.stages)
   key          = "stage"
   value        = each.value
   category     = "terraform"
-  workspace_id = tfe_workspace.networking[each.key].id
+  workspace_id = tfe_workspace.app[each.key].id
 }

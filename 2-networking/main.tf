@@ -8,6 +8,6 @@ module "vpc" {
   cidr   = "10.0.0.0/16"
 }
 
-output "vpc_id" {
-  value = module.vpc.vpc_id
+output "vpc" {
+  value = module.vpc
 }
