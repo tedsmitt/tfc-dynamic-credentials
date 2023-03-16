@@ -90,6 +90,7 @@ resource "tfe_workspace" "networking" {
     branch         = "main"
   }
   working_directory = "2-networking"
+  trigger_prefixes  = ["2-networking"]
 }
 
 resource "tfe_workspace_variable_set" "networking" {
@@ -112,7 +113,6 @@ resource "tfe_workspace" "app" {
   name                          = "app-${each.value}"
   organization                  = data.tfe_organization.main.name
   tag_names                     = ["app", each.value]
-  working_directory             = "3-app"
   structured_run_output_enabled = false
 
   vcs_repo {
@@ -120,6 +120,8 @@ resource "tfe_workspace" "app" {
     oauth_token_id = data.tfe_oauth_client.github.oauth_token_id
     branch         = "main"
   }
+  working_directory = "3-app"
+  trigger_prefixes  = ["3-app"]
 }
 
 resource "tfe_workspace_variable_set" "app" {
