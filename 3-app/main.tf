@@ -50,3 +50,7 @@ resource "aws_apprunner_service" "app" {
     Name = "app-${var.stage}"
   }
 }
+
+output "app_runner_endpoint" {
+  value = aws_apprunner_service.app.service_url
+}
