@@ -59,6 +59,12 @@ resource "aws_iam_role_policy_attachment" "terraform_cloud" {
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
 }
 
+# TFC Projects
+resource "tfe_project" "infra" {
+  organization = data.tfe_organization.main.name
+  name         = "infra"
+}
+
 # TFC Variable Set
 resource "tfe_variable_set" "aws_credentials" {
   name         = "AWS Credentials"
@@ -80,6 +86,7 @@ resource "tfe_workspace" "networking" {
   for_each                      = toset(local.stages)
   name                          = "networking-${each.value}"
   organization                  = data.tfe_organization.main.name
+  project_id                    = tfe_project.infra.id
   tag_names                     = ["networking", each.value]
   structured_run_output_enabled = false
   global_remote_state           = true
@@ -112,6 +119,7 @@ resource "tfe_workspace" "app" {
   for_each                      = toset(local.stages)
   name                          = "app-${each.value}"
   organization                  = data.tfe_organization.main.name
+  project_id                    = tfe_project.infra.id
   tag_names                     = ["app", each.value]
   structured_run_output_enabled = false
 
